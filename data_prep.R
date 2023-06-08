@@ -127,8 +127,8 @@ df_paper_ajustada <-
          -ts_tent_1,
          -ts_tent_2,
          -ts_tent_3,
-         -starts_with("ansiedade"),
-         -starts_with("depressao"),
+         -starts_with("ansiedade_beck"),
+         -starts_with("depressao_beck"),
          -who_qol1,
          -medicamentos) |>
 # ajustando as questões do WHOQoL
@@ -229,6 +229,8 @@ df_paper_ajustada_final <-
     relocate(hgs_max, .after = comorbidades) |>
     relocate(tug_max, .after = hgs_max) |>
     relocate(ts_max, .after = tug_max) |>
+    relocate(ansiedade_score, .after = ts_max) |>
+    relocate(depressao_score, .after = ansiedade_score) |>
     mutate(percentual_gordura = case_when(percentual_gordura > 1000 ~ 26.3,
                                           TRUE ~ percentual_gordura)
 )
