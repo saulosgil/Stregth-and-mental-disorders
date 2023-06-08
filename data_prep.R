@@ -6,7 +6,6 @@ df_renomeado <- readr::read_rds("database_08062023.rds")
 
 # Excluindo os duplicados para analise transversal --------------------------------------------
 # Ajustando o nome das variaveis
-
 df_renomeado <- janitor::clean_names(df_renomeado)
 
 # Pegando somente quem tem racimed e excluindo que tem um segundo registro (reavaliação)
@@ -106,3 +105,133 @@ df_paper <-
 # verificando a base
 glimpse(df_paper)
 
+# Ajustando a base para análise ---------------------------------------------------------------
+# Pegando valores máximo - HGS, TUG, TS -------------------------------------------------------
+df_paper_ajustada <-
+  df_paper |>
+  mutate(hgs_max = apply(df_paper[,13:15], MARGIN = 1,FUN = max),
+         tug_max = apply(df_paper[,16:18], MARGIN = 1,FUN = max),
+         ts_max = apply(df_paper[,19:21], MARGIN = 1,FUN = max),
+# escore de ansiedade
+         ansiedade_score = apply(df_paper[,22:42],MARGIN = 1,FUN = sum),
+# escore de depressão
+         depressao_score = apply(df_paper[,43:63],MARGIN = 1,FUN = sum),
+         ) |>
+# retirando as colunas que não iremos usar
+  select(-hgs_tent_1,
+         -hgs_tent_2,
+         -hgs_tent_3,
+         -tug_tent_1,
+         -tug_tent_2,
+         -tug_tent_3,
+         -ts_tent_1,
+         -ts_tent_2,
+         -ts_tent_3,
+         -starts_with("ansiedade"),
+         -starts_with("depressao"),
+         -who_qol1,
+         -medicamentos) |>
+# ajustando as questões do WHOQoL
+  mutate(who_qol4 = case_when(who_qol4 == 1 ~ 5,
+                              who_qol4 == 2 ~ 4,
+                              who_qol4 == 3 ~ 3,
+                              who_qol4 == 4 ~ 2,
+                              who_qol4 == 5 ~ 1),
+         who_qol5 = case_when(who_qol5 == 1 ~ 5,
+                              who_qol5 == 2 ~ 4,
+                              who_qol5 == 3 ~ 3,
+                              who_qol5 == 4 ~ 2,
+                              who_qol5 == 5 ~ 1),
+         who_qol27 = case_when(who_qol27 == 1 ~ 5,
+                               who_qol27 == 2 ~ 4,
+                               who_qol27 == 3 ~ 3,
+                               who_qol27 == 4 ~ 2,
+                               who_qol27 == 5 ~ 1))
+
+# Calculando o WHOQoL -------------------------------------------------------------------------
+# físico
+whoqol_fisico <-
+  df_paper_ajustada |>
+  select(who_qol4,
+         who_qol5,
+         who_qol11,
+         who_qol16,
+         who_qol7,
+         who_qol18,
+         who_qol19)
+
+whoqol_fisico <-
+  whoqol_fisico |>
+  mutate(whoqol_fisico = apply(whoqol_fisico[,1:6],MARGIN = 1,FUN = sum)/7) |>
+  select(whoqol_fisico)
+
+# psicologico
+whoqol_psicol <-
+  df_paper_ajustada |>
+  select(who_qol6,
+         who_qol7,
+         who_qol8,
+         who_qol12,
+         who_qol20,
+         who_qol27)
+
+whoqol_psicol <-
+  whoqol_psicol |>
+  mutate(whoqol_psicol = apply(whoqol_psicol[,1:5],MARGIN = 1,FUN = sum)/6) |>
+  select(whoqol_psicol)
+
+# Relações sociais
+whoqol_social <-
+  df_paper_ajustada |>
+  select(who_qol21,
+         who_qol22,
+         who_qol23)
+
+whoqol_social <-
+  whoqol_social |>
+  mutate(whoqol_social = apply(whoqol_social[,1:3],MARGIN = 1,FUN = sum)/3) |>
+  select(whoqol_social)
+
+# Meio ambiente
+whoqol_ambiente <-
+  df_paper_ajustada |>
+  select(who_qol9,
+         who_qol10,
+         who_qol13,
+         who_qol14,
+         who_qol15,
+         who_qol24,
+         who_qol25,
+         who_qol26)
+
+whoqol_ambiente <-
+  whoqol_ambiente |>
+  mutate(whoqol_ambiente = apply(whoqol_ambiente[,1:3],MARGIN = 1,FUN = sum)/8) |>
+  select(whoqol_ambiente)
+
+# Juntando os dominios do WHOQol com a base ---------------------------------------------------
+#juntado os dominios
+fis_psi <- bind_cols(whoqol_fisico, whoqol_psicol)
+fis_psi_soc <- bind_cols(fis_psi,whoqol_social)
+todos_dominios <- bind_cols(fis_psi_soc,whoqol_ambiente)
+
+# Juntando os dominios do WHOQoL com a base e removendo as colunas isoladas
+df_paper_ajustada_final <- bind_cols(df_paper_ajustada, todos_dominios)
+
+df_paper_ajustada_final <-
+  df_paper_ajustada_final |>
+  rename(who_percep_saude = who_qol2,
+         who_satisf_saude = who_qol3) |>
+  select(-starts_with("who_qol"),
+         -data_nasc) |>
+    relocate(idade, .after = nome) |>
+    relocate(estatura, .after = peso) |>
+    relocate(hgs_max, .after = comorbidades) |>
+    relocate(tug_max, .after = hgs_max) |>
+    relocate(ts_max, .after = tug_max) |>
+    mutate(percentual_gordura = case_when(percentual_gordura > 1000 ~ 26.3,
+                                          TRUE ~ percentual_gordura)
+)
+
+# tabela para analise -------------------------------------------------------------------------
+write_rds(x =df_paper_ajustada_final,file =  "df_para_analise.rds")
