@@ -235,5 +235,16 @@ df_paper_ajustada_final <-
                                           TRUE ~ percentual_gordura)
 )
 
+# Tratando os missing -------------------------------------------------------------------------
+# Verifricando os missing
+mice::md.pattern(df_paper_ajustada_final)
+
+# Imputação using pmm
+tempData <- mice(df_paper_ajustada_final,m=5,maxit=50,meth='pmm',seed=500)
+
+# Base imputada
+df <- complete(tempData,1)
+mice::md.pattern(df)
+
 # tabela para analise -------------------------------------------------------------------------
 write_rds(x =df_paper_ajustada_final,file =  "df_para_analise.rds")
