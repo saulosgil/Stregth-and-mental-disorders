@@ -247,4 +247,4 @@ df <- complete(tempData,1)
 mice::md.pattern(df)
 
 # tabela para analise -------------------------------------------------------------------------
-write_rds(x =df_paper_ajustada_final,file =  "df_para_analise.rds")
+write_rds(x =df,file =  "df_para_analise.rds")

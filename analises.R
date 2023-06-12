@@ -1,21 +1,9 @@
 # pacotes -------------------------------------------------------------------------------------
 library(tidyverse)
-library(mice)
 
 # ler a base ----------------------------------------------------------------------------------
-
 df <- readRDS("df_para_analise.rds")
 glimpse(df)
-
-# Tratando os missing -------------------------------------------------------------------------
-# Verifricando os missing
-mice::md.pattern(df)
-
-# Imputação using pmm
-tempData <- mice(df,m=5,maxit=50,meth='pmm',seed=500)
-
-# Base imputada
-df <- complete(tempData,1)
 
 # Criando os grupos pela mediana de acordo com o HGS -------------------------------------------------------
 df <- df |>
@@ -117,10 +105,10 @@ df |>
   geom_point()
 
 df |>
-  group_by(ts_class) |>
+  group_by(hgs_class) |>
   summarize(media = mean(depressao_score),
-            DP = sd(ansiedade_score)) |>
-  ggplot(mapping = aes(x = ts_class,
+            DP = sd(depressao_score)) |>
+  ggplot(mapping = aes(x = hgs_class,
                        y = media)) +
   geom_bar(position = position_dodge(),
            stat = "identity",
