@@ -104,6 +104,7 @@ df |>
   ggplot(mapping = aes(x = ts_max,y = depressao_score)) +
   geom_point()
 
+# Grafico de barras ---------------------------------------------------------------------------
 df |>
   group_by(hgs_class) |>
   summarize(media = mean(depressao_score),
@@ -112,10 +113,18 @@ df |>
                        y = media)) +
   geom_bar(position = position_dodge(),
            stat = "identity",
-           colour='black') +
+           colour = "black",
+           fill = c("black", "white"),
+           show.legend = FALSE) +
   geom_errorbar(aes(ymin = media,
                     ymax = media + DP),
-                width=.2)
+                width=.2) +
+  theme_classic() +
+  ylab(label = "Beck depression inventory score (a.u.)") +
+  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
+  theme(
+    axis.title.x = element_blank()
+  )
 
 # analises exploratórias - test t e regressão -------------------------------------------------
 # tirar notação cientifica
@@ -124,7 +133,7 @@ options(scipen=999)
 # Graficos + testes t para amostras independentes ---------------------------------------------
 # Ansiedade
 ## HGS
-t.test(depressao_score ~ ts_class, df)
+t.test(depressao_score ~ tug_class, df)
 
 ## TS
 
