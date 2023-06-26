@@ -1,5 +1,6 @@
 # pacotes -------------------------------------------------------------------------------------
 library(tidyverse)
+library(patchwork)
 
 # ler a base ----------------------------------------------------------------------------------
 df <- readRDS("df_para_analise.rds")
@@ -148,18 +149,18 @@ hgs_ansiedade_severa |>
   geom_col(mapping = aes(),
            color = "black",
            fill = c("black", "white")) +
-  geom_text(aes(label = c("42.6%", "67.6%")),
-            size = 8,
-            vjust = 0,
-            hjust = -0.2) +
+  geom_text(aes(label = c("53.7%", "56.7%")),
+            size = 6,
+            vjust = -0.5) +
   ylab(label = "Relative frequency (%)") +
   xlab(label = "") +
   scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
   theme(panel.grid = element_line(colour = "black",
                                   linetype = 2))  +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 80)) +
-  coord_flip()
+  scale_y_continuous(limits = c(0, 80))
+
+hgs_ans
 
 # Depressao
 hgs_depressao_severa <-
@@ -181,17 +182,17 @@ hgs_dep <-
            fill = c("black", "white")) +
   geom_text(aes(label = c("2.7%", "7.4%")),
             # position = position_dodge(0.9),
-            size = 8,
-            vjust = 0,
-            hjust = -0.2) +
+            size = 6,
+            vjust = -0.5) +
   ylab(label = "Relative frequency (%)") +
   xlab(label = "") +
   scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
   theme(panel.grid = element_line(colour = "black",
                                   linetype = 2))  +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 10)) +
-  coord_flip()
+  scale_y_continuous(limits = c(0, 10))
+
+hgs_dep
 
 # Timed stands --------------------------------------------------------------------------------
 # Ansiedade
@@ -213,17 +214,17 @@ ts_ans <-
            color = "black",
            fill = c("black", "white")) +
   geom_text(aes(label = c("42.6%", "67.6%")),
-            size = 8,
-            vjust = 0,
-            hjust = -0.2) +
+            size = 6,
+            vjust = -0.5) +
   ylab(label = "Relative frequency (%)") +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
+  scale_x_discrete(labels = c("High\nTimed Stands", "Low\nTimed Stands"))+
   theme(panel.grid = element_line(colour = "black",
                                   linetype = 2))  +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 80)) +
-  coord_flip()
+  scale_y_continuous(limits = c(0, 80))
+
+ts_ans
 
 # Depressao
 ts_depressao_severa <-
@@ -245,19 +246,21 @@ ts_dep <-
            fill = c("black", "white")) +
   geom_text(aes(label = c("1.8%", "8.3%")),
             # position = position_dodge(0.9),
-            size = 8,
-            vjust = 0,
-            hjust = -0.2) +
+            size = 6,
+            vjust = -0.5) +
   ylab(label = "Relative frequency (%)") +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
+  scale_x_discrete(labels = c("High\nTimed Stands", "Low\nTimed Stands"))+
   theme(panel.grid = element_line(colour = "black",
                                   linetype = 2))  +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 10)) +
-  coord_flip()
+  scale_y_continuous(limits = c(0, 10))
 
+ts_dep
+
+# Layout
 (hgs_ans | hgs_dep)/(ts_ans | ts_dep)
+
 # analises exploratórias - test t e regressão -------------------------------------------------
 # tirar notação cientifica
 options(scipen=999)
