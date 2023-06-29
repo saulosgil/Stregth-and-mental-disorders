@@ -149,7 +149,7 @@ hgs_ansiedade_severa |>
   geom_col(mapping = aes(),
            color = "black",
            fill = c("black", "white")) +
-  geom_text(aes(label = c("53.7%", "56.7%")),
+  geom_text(aes(label = c("42.6%", "67.6%")),
             size = 6,
             vjust = -0.5) +
   ylab(label = "Relative frequency (%)") +
@@ -259,7 +259,7 @@ ts_dep <-
 ts_dep
 
 # Layout
-(hgs_ans | hgs_dep)/(ts_ans | ts_dep)
+(hgs_ans | ts_ans)/(hgs_dep | ts_dep)
 
 # analises exploratórias - test t e regressão -------------------------------------------------
 # tirar notação cientifica
