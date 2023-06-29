@@ -117,6 +117,8 @@ df_paper_ajustada <-
 # escore de depressão
          depressao_score = apply(df_paper[,43:63],MARGIN = 1,FUN = sum),
          ) |>
+# ajuste devido o escore estar vindo de 1 a 4 e não 0 a 3 como deveria!
+  mutate(ansiedade_score = ansiedade_score - 21) |>
 # retirando as colunas que não iremos usar
   select(-hgs_tent_1,
          -hgs_tent_2,
@@ -240,11 +242,12 @@ df_paper_ajustada_final <-
 mice::md.pattern(df_paper_ajustada_final)
 
 # Imputação using pmm
-tempData <- mice(df_paper_ajustada_final,m=5,maxit=50,meth='pmm',seed=500)
+tempData <- mice::mice(df_paper_ajustada_final,m=5,maxit=50,meth='pmm',seed=500)
 
 # Base imputada
 df <- complete(tempData,1)
 mice::md.pattern(df)
+glimpse(df)
 
 # tabela para analise -------------------------------------------------------------------------
-write_rds(x =df,file =  "df_para_analise.rds")
+write_rds(x = df,file =  "df_para_analise.rds")
