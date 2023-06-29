@@ -58,12 +58,25 @@ df <- bind_rows(low_ts,hig_ts)
 # Criando as classes para ansiedade, depressão, idade, bmi -----------------------------------
 df <-
   df |>
-  mutate(ansiedade_class = if_else(ansiedade_score > 25, 1,0),
-         depressao_class = if_else(depressao_score >= 29, 1,0),
-         idade_class = if_else(idade < 65, "adulto", "idoso"),
-         bmi = peso/((estatura/100)^2),
-         bmi_class = if_else(bmi < 30, "non-obese", "obese",missing = "non-obese")
-         )
+  mutate(
+    ansiedade_class = case_when(
+      ansiedade_score <  08 ~ "Minimal",
+      ansiedade_score >= 08 & ansiedade_score < 16 ~ "Mild",
+      ansiedade_score >= 16 & ansiedade_score < 26 ~ "Moderate",
+      ansiedade_score >= 26 ~ "Severe"
+    ),
+    depressao_class = case_when(
+      depressao_score <  14 ~ "Minimal",
+      depressao_score >= 14 & depressao_score < 20 ~ "Mild",
+      depressao_score >= 20 & depressao_score < 29 ~ "Moderate",
+      depressao_score >= 29 ~ "Severe"
+    ),
+    ansiedade_class_severe = if_else(ansiedade_score > 25, 1,0),
+    depressao_class_severe = if_else(depressao_score >= 29, 1,0),
+    idade_class = if_else(idade < 65, "adulto", "idoso"),
+    bmi = peso/((estatura/100)^2),
+    bmi_class = if_else(bmi < 30, "non-obese", "obese",missing = "non-obese")
+    )
 
 # realocando as colunas -----------------------------------------------------------------------
 df <-
@@ -72,15 +85,20 @@ df <-
   relocate(tug_class,.after = tug_max) |>
   relocate(ts_class,.after = ts_max) |>
   relocate(ansiedade_class,.after = ansiedade_score) |>
-  relocate(depressao_class,.after = depressao_score) |>
+  relocate(ansiedade_class_severe,.after = ansiedade_class) |>
+  relocate(depressao_class,.after = ansiedade_class_severe) |>
+  relocate(depressao_class_severe,.after = depressao_class) |>
   relocate(idade_class,.after = idade) |>
   relocate(bmi,.after = estatura) |>
   relocate(bmi_class,.after = bmi) |>
   mutate(raca = as.factor(raca)) |>
-  mutate(ansiedade_class = as.factor(ansiedade_class)) |>
-  mutate(depressao_class = as.factor(depressao_class))
+  mutate(ansiedade_class = as.factor(ansiedade_class),
+         ansiedade_class_severe = as.factor(ansiedade_class_severe),
+         depressao_class = as.factor(depressao_class),
+         depressao_class_severe = as.factor(depressao_class_severe))
 
 glimpse(df)
+skimr::skim(df)
 
 # Graficos exploratórios ----------------------------------------------------------------------
 df |>
@@ -124,10 +142,11 @@ df |>
                 width=.2) +
   theme_classic() +
   ylab(label = "Beck depression inventory score (a.u.)") +
-  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
+  scale_x_discrete(labels = c("High\nTimed Stands", "Low\nTimed Stands"))+
   theme(
     axis.title.x = element_blank()
-  )
+  ) +
+  scale_y_continuous(limits = c(0, 25, 5))
 
 # Grafico de barras para mostrar frequencia relativa de sintomas severos de ansiedade  --------
 # handgrip ------------------------------------------------------------------------------------
@@ -140,25 +159,39 @@ hgs_ansiedade_severa <-
 
 hgs_ansiedade_severa
 
+# vetor de ordenação
+
+level_order <- c("Minimal", "Mild", "Moderate", "Severe")
 # plot
 hgs_ans <-
-hgs_ansiedade_severa |>
-  filter(ansiedade_class == 1) |>
-  ggplot(mapping = aes(x = hgs_class,
-                       y = perc_ansiedade_severo)) +
-  geom_col(mapping = aes(),
-           color = "black",
-           fill = c("black", "white")) +
-  geom_text(aes(label = c("42.6%", "67.6%")),
-            size = 6,
-            vjust = -0.5) +
-  ylab(label = "Relative frequency (%)") +
+  df |>
+  group_by(hgs_class, ansiedade_class) |>
+  summarise(abs_ansiedade_severo = n(),
+            perc_ansiedade_severo = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = ansiedade_class,
+                       y = perc_ansiedade_severo,
+                       colour = "black",
+                       fill = hgs_class)) +
+  geom_col(position = "dodge",
+           colour = "black") +
+  geom_text(aes(
+    label = c("13.9%","74.1%","9.2%","2.7%","24.1%","55.6%","15.7%","4.6%")),
+    color = "black",
+    position = position_dodge(0.9),
+    size = 5,
+    vjust = -0.5,
+    show.legend = FALSE) +
+  scale_x_discrete(limits = level_order) +
+  scale_y_continuous(limits = c(0, 100, 25)) +
+  scale_fill_manual(labels = c("High Strength", "Low Strength"),
+                    values = c("black", "white")) +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
-  theme(panel.grid = element_line(colour = "black",
-                                  linetype = 2))  +
+  ylab("relative frequency (%)") +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 80))
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
 
 hgs_ans
 
@@ -173,24 +206,34 @@ hgs_depressao_severa
 
 # Plot
 hgs_dep <-
-  hgs_depressao_severa |>
-  filter(depressao_class == 1) |>
-  ggplot(mapping = aes(x = hgs_class,
-                       y = perc_depressao_severo)) +
-  geom_col(mapping = aes(),
-           color = "black",
-           fill = c("black", "white")) +
-  geom_text(aes(label = c("2.7%", "7.4%")),
-            # position = position_dodge(0.9),
-            size = 6,
-            vjust = -0.5) +
-  ylab(label = "Relative frequency (%)") +
+  df |>
+  group_by(hgs_class, depressao_class) |>
+  summarise(abs_depressao_severo = n(),
+            perc_depressao_severo = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = depressao_class,
+                       y = perc_depressao_severo,
+                       colour = "black",
+                       fill = hgs_class)) +
+  geom_col(position = "dodge",
+           colour = "black") +
+  geom_text(aes(
+    label = c("11.1%","76.9%","9.2%","2.7%","14.8%","70.4%","8.3%","6.4%")),
+    color = "black",
+    position = position_dodge(0.9),
+    size = 5,
+    vjust = -0.5,
+    show.legend = FALSE) +
+  scale_x_discrete(limits = level_order) +
+  scale_y_continuous(limits = c(0, 100, 25)) +
+  scale_fill_manual(labels = c("High Strength", "Low Strength"),
+                    values = c("black", "white")) +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nStrength", "Low\nStrength"))+
-  theme(panel.grid = element_line(colour = "black",
-                                  linetype = 2))  +
+  ylab("relative frequency (%)") +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 10))
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
 
 hgs_dep
 
@@ -204,25 +247,40 @@ ts_ansiedade_severa <-
 
 ts_ansiedade_severa
 
+# Qui quadrado
+ts_ans_chisquare <- table(df$ts_class, df$ansiedade_class)
+chisq.test(ts_ans_chisquare)
+
 # plot
 ts_ans <-
-  ts_ansiedade_severa |>
-  filter(ansiedade_class == 1) |>
-  ggplot(mapping = aes(x = ts_class,
-                       y = perc_ansiedade_severo)) +
-  geom_col(mapping = aes(),
-           color = "black",
-           fill = c("black", "white")) +
-  geom_text(aes(label = c("42.6%", "67.6%")),
-            size = 6,
-            vjust = -0.5) +
-  ylab(label = "Relative frequency (%)") +
+  df |>
+  group_by(ts_class, ansiedade_class) |>
+  summarise(abs_ansiedade_severo = n(),
+            perc_ansiedade_severo = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = ansiedade_class,
+                       y = perc_ansiedade_severo,
+                       colour = "black",
+                       fill = ts_class)) +
+  geom_col(position = "dodge",
+           colour = "black") +
+  geom_text(aes(
+    label = c("13.9%","76.9%","7.4%","1.8%","24.1%","52.8%","17.6%","5.5%")),
+    color = "black",
+    position = position_dodge(0.9),
+    size = 5,
+    vjust = -0.5,
+    show.legend = FALSE) +
+  scale_x_discrete(limits = level_order) +
+  scale_y_continuous(limits = c(0, 100, 25)) +
+  scale_fill_manual(labels = c("High Timed Stands", "Low Timed Stands"),
+                    values = c("black", "white")) +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nTimed Stands", "Low\nTimed Stands"))+
-  theme(panel.grid = element_line(colour = "black",
-                                  linetype = 2))  +
+  ylab("relative frequency (%)") +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 80))
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
 
 ts_ans
 
@@ -235,26 +293,40 @@ ts_depressao_severa <-
 
 ts_depressao_severa
 
+# Qui quadrado
+ts_dep_chisquare <- table(df$ts_class, df$depressao_class)
+chisq.test(ts_dep_chisquare)
+
 # Plot
 ts_dep <-
-  ts_depressao_severa |>
-  filter(depressao_class == 1) |>
-  ggplot(mapping = aes(x = ts_class,
-                       y = perc_depressao_severo)) +
-  geom_col(mapping = aes(),
-           color = "black",
-           fill = c("black", "white")) +
-  geom_text(aes(label = c("1.8%", "8.3%")),
-            # position = position_dodge(0.9),
-            size = 6,
-            vjust = -0.5) +
-  ylab(label = "Relative frequency (%)") +
+  df |>
+  group_by(ts_class, depressao_class) |>
+  summarise(abs_depressao_severo = n(),
+            perc_depressao_severo = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = depressao_class,
+                       y = perc_depressao_severo,
+                       colour = "black",
+                       fill = ts_class)) +
+  geom_col(position = "dodge",
+           colour = "black") +
+  geom_text(aes(
+    label = c("7.4%","81.5%","8.3%","2.7%","18.5%","65.7%","9.2%","6.4%")),
+    color = "black",
+    position = position_dodge(0.9),
+    size = 5,
+    vjust = -0.5,
+    show.legend = FALSE) +
+  scale_x_discrete(limits = level_order) +
+  scale_y_continuous(limits = c(0, 100, 25)) +
+  scale_fill_manual(labels = c("High Strength", "Low Strength"),
+                    values = c("black", "white")) +
   xlab(label = "") +
-  scale_x_discrete(labels = c("High\nTimed Stands", "Low\nTimed Stands"))+
-  theme(panel.grid = element_line(colour = "black",
-                                  linetype = 2))  +
+  ylab("relative frequency (%)") +
   theme_classic() +
-  scale_y_continuous(limits = c(0, 10))
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
 
 ts_dep
 
@@ -268,38 +340,54 @@ options(scipen=999)
 # Graficos + testes t para amostras independentes ---------------------------------------------
 # Ansiedade
 ## HGS
-t.test(depressao_score ~ tug_class, df)
+t.test(ansiedade_score ~ hgs_class, df)
 
 ## TS
-
-## TUG
+t.test(ansiedade_score ~ ts_class, df)
 
 # Depressao
 ## HGS
-t.test(depressao_score ~ ts_class, df)
+t.test(depressao_score ~ hgs_class, df)
 
 ## TS
-
-## TUG
-
-# Radar plot + teste t independente de todos os dominios --------------------------------------
-
-
-
-
+t.test(depressao_score ~ ts_class, df)
 
 # Regressões lineares -------------------------------------------------------------------------
+## HGS
+### Ansiedade
+#### Crude
+model <- lm(ansiedade_score ~ hgs_max, df)
+sjPlot::tab_model(model)
 
-model <- lm(whoqol_fisico ~ hgs_max +
-               genero + idade_class + raca + bmi_class, df)
+#### Ajustado
+model <- lm(ansiedade_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class, df)
+sjPlot::tab_model(model)
 
-model <- glm(ansiedade_class ~ hgs_class +
-              genero + idade_class + raca + renda + bmi_class, df, family = binomial)
+### Depressao
+#### Crude
+model <- lm(depressao_score ~ hgs_max, df)
+sjPlot::tab_model(model)
 
-summary(model)
+#### Ajustado
+model <- lm(depressao_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class, df)
+sjPlot::tab_model(model)
 
+## TS
+### Ansiedade
+#### Crude
+model <- lm(ansiedade_score ~ ts_max, df)
+sjPlot::tab_model(model)
 
+#### Ajustado
+model <- lm(ansiedade_score ~ ts_max + genero + idade_class + raca + renda + bmi_class, df)
+sjPlot::tab_model(model)
 
+### Depressao
+#### Crude
+model <- lm(depressao_score ~ ts_max, df)
+sjPlot::tab_model(model)
 
-
+#### Ajustado
+model <- lm(depressao_score ~ ts_max + genero + idade_class + raca + renda + bmi_class, df)
+sjPlot::tab_model(model)
 
