@@ -71,8 +71,8 @@ df <-
       depressao_score >= 20 & depressao_score < 29 ~ "Moderate",
       depressao_score >= 29 ~ "Severe"
     ),
-    ansiedade_class_severe = if_else(ansiedade_score > 25, 1,0),
-    depressao_class_severe = if_else(depressao_score >= 29, 1,0),
+    ansiedade_class_2 = if_else(ansiedade_score < 16, "Minimal/Mild","Moderate/Severe"),
+    depressao_class_2 = if_else(depressao_score < 20, "Minimal/Mild","Moderate/Severe"),
     idade_class = if_else(idade < 65, "adulto", "idoso"),
     bmi = peso/((estatura/100)^2),
     bmi_class = if_else(bmi < 30, "non-obese", "obese",missing = "non-obese")
@@ -85,17 +85,17 @@ df <-
   relocate(tug_class,.after = tug_max) |>
   relocate(ts_class,.after = ts_max) |>
   relocate(ansiedade_class,.after = ansiedade_score) |>
-  relocate(ansiedade_class_severe,.after = ansiedade_class) |>
-  relocate(depressao_class,.after = ansiedade_class_severe) |>
-  relocate(depressao_class_severe,.after = depressao_class) |>
+  relocate(ansiedade_class_2,.after = ansiedade_class) |>
+  relocate(depressao_class,.after = ansiedade_class_2) |>
+  relocate(depressao_class_2,.after = depressao_class) |>
   relocate(idade_class,.after = idade) |>
   relocate(bmi,.after = estatura) |>
   relocate(bmi_class,.after = bmi) |>
   mutate(raca = as.factor(raca)) |>
   mutate(ansiedade_class = as.factor(ansiedade_class),
-         ansiedade_class_severe = as.factor(ansiedade_class_severe),
+         ansiedade_class_2 = as.factor(ansiedade_class_2),
          depressao_class = as.factor(depressao_class),
-         depressao_class_severe = as.factor(depressao_class_severe))
+         depressao_class_2 = as.factor(depressao_class_2))
 
 glimpse(df)
 skimr::skim(df)
@@ -153,32 +153,32 @@ df |>
 # Ansiedade
 hgs_ansiedade_severa <-
   df |>
-  group_by(hgs_class, ansiedade_class) |>
-  summarise(abs_ansiedade_severo = n(),
-            perc_ansiedade_severo = n()/(nrow(df)/2)*100)
+  group_by(hgs_class, ansiedade_class_2) |>
+  summarise(abs_ansiedade_2 = n(),
+            perc_ansiedade_2 = n()/(nrow(df)/2)*100)
 
 hgs_ansiedade_severa
 
 # vetor de ordenação
 
-level_order <- c("Minimal", "Mild", "Moderate", "Severe")
+level_order <- c("Minimal/Mild", "Moderate/Severe")
 # plot
 hgs_ans <-
   df |>
-  group_by(hgs_class, ansiedade_class) |>
-  summarise(abs_ansiedade_severo = n(),
-            perc_ansiedade_severo = n()/(nrow(df)/2)*100) |>
-  ggplot(mapping = aes(x = ansiedade_class,
-                       y = perc_ansiedade_severo,
+  group_by(hgs_class, ansiedade_class_2) |>
+  summarise(abs_ansiedade_2 = n(),
+            perc_ansiedade_2 = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = ansiedade_class_2,
+                       y = perc_ansiedade_2,
                        colour = "black",
                        fill = hgs_class)) +
   geom_col(position = "dodge",
            colour = "black") +
   geom_text(aes(
-    label = c("13.9%","74.1%","9.2%","2.7%","24.1%","55.6%","15.7%","4.6%")),
+    label = c("95%", "13%", "86%", "22%")),
     color = "black",
     position = position_dodge(0.9),
-    size = 5,
+    size = 8,
     vjust = -0.5,
     show.legend = FALSE) +
   scale_x_discrete(limits = level_order) +
@@ -196,31 +196,31 @@ hgs_ans <-
 hgs_ans
 
 # Depressao
-hgs_depressao_severa <-
+ts_depressao_severa <-
   df |>
-  group_by(hgs_class, depressao_class) |>
-  summarise(abs_depressao_severo = n(),
-            perc_depressao_severo = n()/(nrow(df)/2)*100)
+  group_by(ts_class, depressao_class_2) |>
+  summarise(abs_depressao_2 = n(),
+            perc_depressao_2 = n()/(nrow(df)/2)*100)
 
-hgs_depressao_severa
+ts_depressao_severa
 
 # Plot
 hgs_dep <-
   df |>
-  group_by(hgs_class, depressao_class) |>
-  summarise(abs_depressao_severo = n(),
-            perc_depressao_severo = n()/(nrow(df)/2)*100) |>
-  ggplot(mapping = aes(x = depressao_class,
-                       y = perc_depressao_severo,
+  group_by(hgs_class, depressao_class_2) |>
+  summarise(abs_depressao_severo_2 = n(),
+            perc_depressao_severo_2 = n()/(nrow(df)/2)*100) |>
+  ggplot(mapping = aes(x = depressao_class_2,
+                       y = perc_depressao_severo_2,
                        colour = "black",
                        fill = hgs_class)) +
   geom_col(position = "dodge",
            colour = "black") +
   geom_text(aes(
-    label = c("11.1%","76.9%","9.2%","2.7%","14.8%","70.4%","8.3%","6.4%")),
+    label = c("95%","13%","92%","16%")),
     color = "black",
     position = position_dodge(0.9),
-    size = 5,
+    size = 8,
     vjust = -0.5,
     show.legend = FALSE) +
   scale_x_discrete(limits = level_order) +
@@ -241,9 +241,9 @@ hgs_dep
 # Ansiedade
 ts_ansiedade_severa <-
   df |>
-  group_by(ts_class, ansiedade_class) |>
-  summarise(abs_ansiedade_severo = n(),
-            perc_ansiedade_severo = n()/(nrow(df)/2)*100)
+  group_by(ts_class, ansiedade_class_2) |>
+  summarise(abs_ansiedade_2 = n(),
+            perc_ansiedade_2 = n()/(nrow(df)/2)*100)
 
 ts_ansiedade_severa
 
