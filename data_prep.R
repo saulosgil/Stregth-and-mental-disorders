@@ -102,6 +102,19 @@ df_paper <-
          who_qol13 = as.numeric(unlist(who_qol13))
   )
 
+# Separando HAS e DM para usar como ajuste nos modelos ----------------------------------------
+has <- str_detect(string = df_paper$comorbidades,pattern = "hipertensão arterial")
+dm <- str_detect(string = df_paper$comorbidades,pattern = "Diabetes")
+
+df_paper <-
+  df_paper |>
+  mutate(
+    has = case_when(has == TRUE ~ 1,
+                    has != TRUE ~ 0),
+    dm = case_when(dm == TRUE ~ 1,
+                   dm != TRUE ~ 0)
+  )
+
 # verificando a base
 glimpse(df_paper)
 

@@ -75,7 +75,8 @@ df <-
     depressao_class_2 = if_else(depressao_score < 20, "Minimal/Mild","Moderate/Severe"),
     idade_class = if_else(idade < 65, "adulto", "idoso"),
     bmi = peso/((estatura/100)^2),
-    bmi_class = if_else(bmi < 30, "non-obese", "obese",missing = "non-obese")
+    bmi_class = if_else(bmi < 30, "non-obese", "obese",missing = "non-obese"),
+    hgs_bmi = hgs_max / bmi
     )
 
 # realocando as colunas -----------------------------------------------------------------------
@@ -360,7 +361,7 @@ model <- lm(ansiedade_score ~ hgs_max, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 1
-model <- lm(ansiedade_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class, df)
+model <- lm(ansiedade_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 2
@@ -373,7 +374,7 @@ model <- lm(depressao_score ~ hgs_max, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 1
-model <- lm(depressao_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class, df)
+model <- lm(depressao_score ~ hgs_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 2
@@ -387,7 +388,7 @@ model <- lm(ansiedade_score ~ ts_max, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 1
-model <- lm(ansiedade_score ~ ts_max + genero + idade_class + raca + renda + bmi_class, df)
+model <- lm(ansiedade_score ~ ts_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 2
@@ -400,10 +401,36 @@ model <- lm(depressao_score ~ ts_max, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 1
-model <- lm(depressao_score ~ ts_max + genero + idade_class + raca + renda + bmi_class, df)
+model <- lm(depressao_score ~ ts_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
 sjPlot::tab_model(model)
 
 #### Ajustado 2
 model <- lm(depressao_score ~ ts_max + genero + idade_class + raca + renda, df)
 sjPlot::tab_model(model)
 
+## HGS + TS
+### Ansiedade
+#### Crude
+model <- lm(ansiedade_score ~ hgs_max + ts_max, df)
+sjPlot::tab_model(model)
+
+#### Ajustado 1
+model <- lm(ansiedade_score ~ hgs_max + ts_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
+sjPlot::tab_model(model)
+
+#### Ajustado 2
+model <- lm(ansiedade_score ~ hgs_max + ts_max + genero + idade_class + raca + renda, df)
+sjPlot::tab_model(model)
+
+### Depressao
+#### Crude
+model <- lm(depressao_score ~ hgs_max + ts_max, df)
+sjPlot::tab_model(model)
+
+#### Ajustado 1
+model <- lm(depressao_score ~ hgs_max + ts_max + genero + idade_class + raca + renda + bmi_class + has + dm, df)
+sjPlot::tab_model(model)
+
+#### Ajustado 2
+model <- lm(depressao_score ~ hgs_max + ts_max + genero + idade_class + raca + renda, df)
+sjPlot::tab_model(model)
